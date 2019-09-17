@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+// 上面是一个固定的参数 由 /usr/bin/env 来 执行node ，必须在第一行
+
+const figlet = require("figlet"); //生产ascll码
+const Printer = require("@darkobits/lolcatjs"); //渐变色字体包
+const program = require("commander"); //cli的命令工具
+const inquirer = require("inquirer"); //跟用户输入进行交流的包
+const ora = require("ora"); //加载等待的包
+// const shelljs = 
+const spinner = ora("Loading unicorns");
+const text = figlet.textSync("MA  XIAO", {
+  font: "Ghost", // "Standard"
+  horizontalLayout: "universal smushing", //"default", "full", "fitted", "controlled smushing", and "universal smushing"
+  verticalLayout: "default" // "default", "full", "fitted", "controlled smushing", and "universal smushing"
+});
+console.log(Printer.default.fromString(text));
+// console.log("Printer   ",Printer)
+program.version("0.1.0");
+program
+  .usage("<cmd> [env]")
+  .arguments("<cmd> [env]")
+  .action(function(cmd, env) {
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "js",
+          message: "请问使用那种编程语言",
+          choices: ["✔ ES6", "✔ TypeScript"]
+        }
+      ])
+      .then(answers => {
+        spinner.start();
+        console.log("answers  ", answers);
+      });
+  });
+
+program.parse(process.argv);

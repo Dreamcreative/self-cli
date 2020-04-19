@@ -1,0 +1,123 @@
+#!/usr/bin/env node
+// node的地址，不同的系统node 的存放地址不同，但是 /usr/bin/env都存在
+const package = require("../package.json")
+const figlet = require("figlet")
+const Printer = require("@darkobits/lolcatjs");
+const text = "version is: " + package.version + "\n" + figlet.textSync("maxiao");
+const result = Printer.default.fromString(text);
+const program = require("commander");
+const inquirer = require("inquirer");
+const ora = require("ora");
+const shell = require('shelljs');
+var childProcess = require('child_process');
+var which = require('which');
+const download = require('download-git-repo');
+// 开启子进程来执行npm install命令
+function runCmd(cmd, args, fn) {
+  args = args || [];
+  var runner = childProcess.spawn(cmd, args, {
+    stdio: 'inherit'    
+  });
+    
+  runner.on('close', function(code) {
+    if(fn) {
+      fn(code);
+    }
+  })
+}
+function findNpm() {
+    var npms = ['tnpm', 'cnpm', 'npm'];
+    for(var i = 0; i < npms.length; i++) {
+      try {
+        // 查找环境变量下指定的可执行文件的第一个实例
+        which.sync(npms[i]);
+        console.log('use npm: ' + npms[i]);
+        return npms[i]
+      }catch(e) {     
+      }
+    }
+    throw new Error(chalk.red('please install npm'));
+  }
+// const spinner = ora('Loading unicorns');
+const json2ts = require("json2ts");
+const bindHandler = {
+    init: () => {
+        inquirer.prompt([
+            {
+                type: "text",
+                message: "请输入项目名称",
+                name: "projectName",
+
+            },
+            {
+                type: 'list',
+                name: "kind",
+                message: "请选择语言",
+                choices: ["✔ ES6", "✔ Typescript"]
+            }
+        ]).then((answers) => {
+            // console.log(answers)
+            const projectName = answers.projectName
+            const spinner = ora('正在克隆，请稍后');
+            if (projectName) {
+                spinner.start()
+                const _path = shell.pwd().stdout;
+                const gitPath = "https://github.com/Dreamcreative/myredux.git";
+                const dirname = `${_path}/${projectName}`
+                shell.cd(_path)
+                shell.rm("-rf", dirname)
+                shell.mkdir(projectName)
+                download(`direct:${gitPath}`, dirname, { clone: true }, function (err) {
+                    if (err) {
+                        console.log('克隆出错', err)
+                    } else {
+                        shell.sed("-i", 'my-redux', projectName, dirname + "/package.json")
+                        program.command("npm install")
+                    }
+                    var npm = findNpm();
+                    console.log('npm+++', which.sync(npm) )
+                    // runCmd(which.sync(npm), ['install'], function() {
+                    //     console.log(npm + ' install end');
+                    // })
+                    spinner.stop()
+                })
+            }
+        })
+    },
+    json2ts: () => {
+        const spinner = ora('正在生成ts');
+        spinner.start()
+        let jsonContent = {
+            status: 200,
+            message: {
+                data: [
+                    {
+                        info: 2,
+                        age: 2
+                    }
+                ]
+            }
+        };
+        let result = json2ts.convert(JSON.stringify(jsonContent));
+        spinner.stop()
+        console.log(result)
+    }
+}
+
+program.version(result, "-v,--version")
+program
+    .option('-i,--init', '项目初始化')
+    .option('json2ts', 'json转typescript')
+
+program.usage("<cmd> [env]")
+    .arguments("<cmd> [env]")
+    .action(function (cmd, otherParmas) {
+        const handle = bindHandler[cmd]
+        if (handle) {
+            handle()
+        } else {
+            console.log(cmd, "暂无该指令")
+        }
+    })
+program.parse(process.argv)
+// console.log(result)

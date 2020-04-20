@@ -1,7 +1,7 @@
 {
-  "name": "ydcli",
+  "name": "mx-self-cli",
   "version": "1.0.0",
-  "description": "",
+  "description": "自己的一个脚手架",
   "main": "index.js",
   "bin": {
     "mx": "./bin/mx"
@@ -10,7 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "m543438924@163.com",
   "license": "ISC",
   "dependencies": {
     "@darkobits/lolcatjs": "^3.1.3",

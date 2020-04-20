@@ -1,45 +1,46 @@
 #!/usr/bin/env node
 // node的地址，不同的系统node 的存放地址不同，但是 /usr/bin/env都存在
-const package = require("../package.json")
-const figlet = require("figlet")
-const Printer = require("@darkobits/lolcatjs");
+const package = require("../package.json")// 获取package.json中的内容 
+const figlet = require("figlet")// 将字符串生成艺术字体
+const Printer = require("@darkobits/lolcatjs"); // 字体渐变色
 const text = "version is: " + package.version + "\n" + figlet.textSync("maxiao");
 const result = Printer.default.fromString(text);
-const program = require("commander");
-const inquirer = require("inquirer");
-const ora = require("ora");
-const shell = require('shelljs');
-var childProcess = require('child_process');
-var which = require('which');
-const download = require('download-git-repo');
+const program = require("commander"); // 命令行
+const inquirer = require("inquirer"); // 用于用户交互
+const ora = require("ora"); // 生成
+const shell = require('shelljs'); // 执行shell脚本
+const childProcess = require('child_process'); // node原生模块，开启子进程
+const which = require('which'); // 查找环境变量下的可执行文件的实例
+const download = require('download-git-repo'); // 下载git项目
+const json2ts = require("json2ts"); // 将字符串生产ts接口
+const gitPath = "https://github.com/Dreamcreative/myredux.git";
 // 开启子进程来执行npm install命令
 function runCmd(cmd, args, fn) {
-  args = args || [];
-  var runner = childProcess.spawn(cmd, args, {
-    stdio: 'inherit'    
-  });
-    
-  runner.on('close', function(code) {
-    if(fn) {
-      fn(code);
-    }
-  })
+    args = args || [];
+    var runner = childProcess.spawn(cmd, args, {
+        stdio: 'inherit'
+    });
+
+    runner.on('close', function (code) {
+        if (fn) {
+            fn(code);
+        }
+    })
 }
 function findNpm() {
     var npms = ['tnpm', 'cnpm', 'npm'];
-    for(var i = 0; i < npms.length; i++) {
-      try {
-        // 查找环境变量下指定的可执行文件的第一个实例
-        which.sync(npms[i]);
-        console.log('use npm: ' + npms[i]);
-        return npms[i]
-      }catch(e) {     
-      }
+    for (var i = 0; i < npms.length; i++) {
+        try {
+            // 查找环境变量下指定的可执行文件的第一个实例
+            which.sync(npms[i]);
+            console.log('use npm: ' + npms[i]);
+            return npms[i]
+        } catch (e) {
+        }
     }
     throw new Error(chalk.red('please install npm'));
-  }
+}
 // const spinner = ora('Loading unicorns');
-const json2ts = require("json2ts");
 const bindHandler = {
     init: () => {
         inquirer.prompt([
@@ -58,28 +59,28 @@ const bindHandler = {
         ]).then((answers) => {
             // console.log(answers)
             const projectName = answers.projectName
-            const spinner = ora('正在克隆，请稍后');
+            let spinner = ora('正在克隆，请稍后');
             if (projectName) {
                 spinner.start()
                 const _path = shell.pwd().stdout;
-                const gitPath = "https://github.com/Dreamcreative/myredux.git";
                 const dirname = `${_path}/${projectName}`
                 shell.cd(_path)
                 shell.rm("-rf", dirname)
                 shell.mkdir(projectName)
                 download(`direct:${gitPath}`, dirname, { clone: true }, function (err) {
+                    spinner.stop()
                     if (err) {
                         console.log('克隆出错', err)
                     } else {
                         shell.sed("-i", 'my-redux', projectName, dirname + "/package.json")
-                        program.command("npm install")
                     }
+                    spinner = ora('正在安装依赖，请稍后！');
+                    shell.cd(dirname)
                     var npm = findNpm();
-                    console.log('npm+++', which.sync(npm) )
-                    // runCmd(which.sync(npm), ['install'], function() {
-                    //     console.log(npm + ' install end');
-                    // })
-                    spinner.stop()
+                    runCmd(which.sync(npm), ['install'], function () {
+                        console.log(npm + ' install end');
+                        spinner.stop()
+                    })
                 })
             }
         })
@@ -120,4 +121,3 @@ program.usage("<cmd> [env]")
         }
     })
 program.parse(process.argv)
-// console.log(result)
